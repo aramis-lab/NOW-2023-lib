@@ -16,7 +16,7 @@ class ToyModel:
         self.max_x = np.max(self.X[:, 0])
         self.min_y = np.min(self.X[:, 1])
         self.max_y = np.max(self.X[:, 1])
-        self.estimator = svm.NuSVC(gamma="auto")
+        self.estimator = svm.SVC()
 
     @property
     def n_samples(self) -> int:
@@ -28,9 +28,11 @@ class ToyModel:
         return [self.min_x, self.max_x, self.min_y, self.max_y]
 
     @classmethod
-    def from_dataframe(cls, df: pd.DataFrame):
-        X = np.array(df[["HC_left_volume", "HC_right_volume"]])
-        y = np.array([1 if x == "AD" else 0 for x in df["group"].values])
+    def from_dataframe(
+        cls, df: pd.DataFrame, predictive_features: list[str], target_feature: str
+    ):
+        X = np.array(df[predictive_features])
+        y = np.array([1 if x == "AD" else 0 for x in df[target_feature].values])
         return cls(X, y)
 
     def fit(self):

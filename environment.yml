@@ -1,0 +1,6 @@
+name: now-lib
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.10

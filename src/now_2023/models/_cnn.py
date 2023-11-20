@@ -9,12 +9,13 @@ from typing import Optional
 from now_2023.datasets import MRIDataset
 
 import warnings
-warnings.filterwarnings("ignore")
 
-__all__ = ["CNNModel"]
+warnings.filterwarnings("ignore")
 
 
 class CNNModel:
+    """The CNN model."""
+
     def __init__(self, learning_rate: float, n_epochs: int, batch_size: int):
         self._learning_rate = learning_rate
         self._n_epochs = n_epochs
@@ -23,11 +24,19 @@ class CNNModel:
         self._network = CustomNetwork()
         if self.use_cuda:
             self._network = self._network.cuda()
-        self._criterion = nn.CrossEntropyLoss(reduction='sum')
-        self._optimizer = torch.optim.Adam(self._network.parameters(), self._learning_rate)
+        self._criterion = nn.CrossEntropyLoss(reduction="sum")
+        self._optimizer = torch.optim.Adam(
+            self._network.parameters(), self._learning_rate
+        )
         self._estimator = None
 
-    def fit(self, img_dir: Path, df: pd.DataFrame, transform=None, batch_size: Optional[int] = None):
+    def fit(
+        self,
+        img_dir: Path,
+        df: pd.DataFrame,
+        transform=None,
+        batch_size: Optional[int] = None,
+    ):
         train_dataset = MRIDataset(img_dir, df, transform=transform)
         loader = DataLoader(
             train_dataset,
@@ -44,13 +53,19 @@ class CNNModel:
             self._n_epochs,
         )
 
-    def predict(self, img_dir: Path, df: pd.DataFrame, transform=None, batch_size: Optional[int] = None):
+    def predict(
+        self,
+        img_dir: Path,
+        df: pd.DataFrame,
+        transform=None,
+        batch_size: Optional[int] = None,
+    ):
         valid_dataset = MRIDataset(img_dir, df, transform=transform)
         loader = DataLoader(
             valid_dataset,
             batch_size=batch_size or self._batch_size,
             shuffle=False,
-            #num_workers=1,
+            # num_workers=1,
             pin_memory=True,
         )
         return test(
@@ -63,9 +78,9 @@ class CNNModel:
         torch.save(self._estimator, output_filename)
 
 
-
 class PadMaxPool3d(nn.Module):
     """A MaxPooling module which deals with odd sizes with padding"""
+
     def __init__(self, kernel_size, stride, return_indices=False, return_pad=False):
         super(PadMaxPool3d, self).__init__()
         self.kernel_size = kernel_size
@@ -115,28 +130,21 @@ class CustomNetwork(nn.Module):
             nn.LeakyReLU(),
             PadMaxPool3d(2, 2),
             # Size 8@15x20x15
-
             nn.Conv3d(8, 16, 3, padding=1),
             # Size 16@15x20x15
             nn.BatchNorm3d(16),
             nn.LeakyReLU(),
             PadMaxPool3d(2, 2),
             # Size 16@8x10x8)
-
             nn.Conv3d(16, 32, 3, padding=1),
             # Size 32@8x10x8
             nn.BatchNorm3d(32),
             nn.LeakyReLU(),
             PadMaxPool3d(2, 2),
             # Size 32@4x5x4
-
         )
 
-        self.linear = nn.Sequential(
-            nn.Dropout(p=0.5),
-            nn.Linear(32 * 4 * 5 * 4, 2)
-
-        )
+        self.linear = nn.Sequential(nn.Dropout(p=0.5), nn.Linear(32 * 4 * 5 * 4, 2))
 
     def forward(self, x):
         x = self.convolutions(x)
@@ -187,9 +195,9 @@ def train(
         for i, data in enumerate(train_loader, 0):
             # Retrieve mini-batch and put data on GPU with .cuda() is possible
             if torch.cuda.is_available():
-                images, labels = data['image'].cuda(), data['label'].cuda()
+                images, labels = data["image"].cuda(), data["label"].cuda()
             else:
-                images, labels = data['image'], data['label']
+                images, labels = data["image"], data["label"]
             # Forward pass
             outputs = model(images)
             # Loss computation
@@ -206,11 +214,11 @@ def train(
         print(
             f"Epoch {epoch}: loss = {train_metrics['mean_loss']:.4f}, "
             f"balanced accuracy = {train_metrics['balanced_accuracy']:.4f}"
-            )
+        )
 
-        if train_metrics['mean_loss'] < train_best_loss:
+        if train_metrics["mean_loss"] < train_best_loss:
             best_model = deepcopy(model)
-            train_best_loss = train_metrics['mean_loss']
+            train_best_loss = train_metrics["mean_loss"]
 
     return best_model
 
@@ -246,16 +254,16 @@ def test(model: nn.Module, data_loader: DataLoader, criterion: nn.Module) -> tup
     with torch.no_grad():
         for i, data in enumerate(data_loader, 0):
             if torch.cuda.is_available():
-                images, labels = data['image'].cuda(), data['label'].cuda()
+                images, labels = data["image"].cuda(), data["label"].cuda()
             else:
-                images, labels = data['image'], data['label']
+                images, labels = data["image"], data["label"]
             outputs = model(images)
             loss = criterion(outputs, labels)
             total_loss += loss.item()
             probs = nn.Softmax(dim=1)(outputs)
             _, predicted = torch.max(outputs.data, 1)
 
-            for idx, sub in enumerate(data['participant_id']):
+            for idx, sub in enumerate(data["participant_id"]):
                 row = [
                     sub,
                     probs[idx, 0].item(),
@@ -266,9 +274,11 @@ def test(model: nn.Module, data_loader: DataLoader, criterion: nn.Module) -> tup
                 row_df = pd.DataFrame([row], columns=columns)
                 results_df = pd.concat([results_df, row_df])
 
-    results_metrics = compute_metrics(results_df.true_label.values, results_df.predicted_label.values)
+    results_metrics = compute_metrics(
+        results_df.true_label.values, results_df.predicted_label.values
+    )
     results_df.reset_index(inplace=True, drop=True)
-    results_metrics['mean_loss'] = total_loss / len(data_loader.dataset)
+    results_metrics["mean_loss"] = total_loss / len(data_loader.dataset)
 
     return results_df, results_metrics
 
@@ -281,14 +291,16 @@ def compute_metrics(ground_truth, prediction) -> dict:
     fn = np.sum((prediction == 0) & (ground_truth == 1))
 
     metrics_dict = dict()
-    metrics_dict['accuracy'] = (tp + tn) / (tp + tn + fp + fn)
-    metrics_dict['sensitivity'] = 0.0
+    metrics_dict["accuracy"] = (tp + tn) / (tp + tn + fp + fn)
+    metrics_dict["sensitivity"] = 0.0
     if tp + fn != 0:
-        metrics_dict['sensitivity'] = tp / (tp + fn)
-    metrics_dict['specificity'] = 0.0
+        metrics_dict["sensitivity"] = tp / (tp + fn)
+    metrics_dict["specificity"] = 0.0
     if fp + tn != 0:
-        metrics_dict['specificity'] = tn / (fp + tn)
+        metrics_dict["specificity"] = tn / (fp + tn)
 
-    metrics_dict['balanced_accuracy'] = (metrics_dict['sensitivity'] + metrics_dict['specificity']) / 2
+    metrics_dict["balanced_accuracy"] = (
+        metrics_dict["sensitivity"] + metrics_dict["specificity"]
+    ) / 2
 
     return metrics_dict

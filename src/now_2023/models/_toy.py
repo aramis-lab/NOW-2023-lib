@@ -6,14 +6,11 @@ import matplotlib.pyplot as plt
 from typing import List
 
 
-__all__ = ["ToyModel"]
-
-
 class ToyModel:
     """Toy model for classification."""
 
     def __init__(self, X: np.ndarray, y: np.ndarray):
-        self.X =X
+        self.X = X
         self.y = y
         self.min_x = np.min(self.X[:, 0])
         self.max_x = np.max(self.X[:, 0])
@@ -23,6 +20,7 @@ class ToyModel:
 
     @property
     def n_samples(self) -> int:
+        """The number of samples."""
         return self.X.shape[0]
 
     @property
@@ -58,7 +56,14 @@ class ToyModel:
             cmap=plt.cm.PuOr_r,
         )
         contours = plt.contour(xx, yy, Z, levels=[0], linewidths=2, linestyles="dashed")
-        plt.scatter(self.X[:, 0], self.X[:, 1], s=30, c=self.y, cmap=plt.cm.Paired, edgecolors="k")
+        plt.scatter(
+            self.X[:, 0],
+            self.X[:, 1],
+            s=30,
+            c=self.y,
+            cmap=plt.cm.Paired,
+            edgecolors="k",
+        )
         plt.xticks(())
         plt.yticks(())
         plt.title(f"Number of sample = {self.n_samples}")

@@ -7,11 +7,10 @@ from typing import Optional, Callable
 from dataclasses import dataclass
 
 
-__all__ = ["Sample", "MRIDataset"]
-
-
 @dataclass
 class Sample:
+    """Class reprsenting a sample from an MRIDataset."""
+
     image: torch.Tensor
     label: str
     participant_id: str
@@ -55,11 +54,19 @@ class MRIDataset(Dataset):
         diagnosis = self.data_df.loc[idx, "diagnosis"]
         label = self.label_code[diagnosis]
         participant_id = self.data_df.loc[idx, "participant_id"]
-        session_id = self.data_df.loc[idx, 'session_id']
+        session_id = self.data_df.loc[idx, "session_id"]
         hemi = self.data_df.loc[idx, "hemi"]
 
         image_filename = f"{participant_id}_{session_id}_T1w_segm-graymatter_space-Ixi549Space_modulated-off_probability_{hemi}.pt"
-        image_folder = self.img_dir / "subjects" / participant_id / session_id / "deeplearning_prepare_data" / "image_based" / "custom"
+        image_folder = (
+            self.img_dir
+            / "subjects"
+            / participant_id
+            / session_id
+            / "deeplearning_prepare_data"
+            / "image_based"
+            / "custom"
+        )
         image = torch.load(image_folder / image_filename)
 
         if self.transform:
@@ -74,5 +81,3 @@ class MRIDataset(Dataset):
     def eval(self):
         if self.transform:
             self.transform.eval()
-
-

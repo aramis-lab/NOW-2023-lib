@@ -1,8 +1,6 @@
 import random
 from dataclasses import dataclass
 
-__all__ = ["CropLeftHC", "CropRightHC"]
-
 
 @dataclass
 class Point:
@@ -20,7 +18,11 @@ class BaseCrop:
 
     def _get_shift(self) -> int:
         """Return a random shift in train mode and no shift otherwise."""
-        return random.randint(-self.random_shift, self.random_shift) if self.train_mode else 0
+        return (
+            random.randint(-self.random_shift, self.random_shift)
+            if self.train_mode
+            else 0
+        )
 
     def _get_slice(self, left_offset: int, right_offset: int):
         """Return a slice in a single dimension with possibly a random shift."""
@@ -50,6 +52,7 @@ class BaseCrop:
 
 class CropLeftHC(BaseCrop):
     """Crops the left hippocampus of a MRI non-linearly registered to MNI"""
+
     def __init__(self, random_shift: int = 0):
         super().__init__(random_shift=random_shift)
         self.bottom_left_point = Point(25, 50, 27)
@@ -58,8 +61,8 @@ class CropLeftHC(BaseCrop):
 
 class CropRightHC(BaseCrop):
     """Crops the right hippocampus of a MRI non-linearly registered to MNI"""
+
     def __init__(self, random_shift: int = 0):
         super().__init__(random_shift=random_shift)
         self.bottom_left_point = Point(65, 50, 27)
         self.upper_right_point = Point(95, 90, 57)
-

@@ -12,4 +12,5 @@ This is the public API of the now 2023 library.
    models.rst
    datasets.rst
    plotting.rst
+   data_generation.rst
    utils.rst
